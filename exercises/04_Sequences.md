@@ -52,7 +52,9 @@ let tests =
     ]
 ```
 
-You'll likely notice immediately that this is essentially the exact same thing as `'a list`. We could easily have used that type for our implementation. However, the goal is to show how to build computation expressions, not use existing `list` comprehensions.
+You'll likely notice immediately that this is essentially the exact same thing as `'a list`. We could easily have 
+used that type for our implementation. However, the goal is to show how to build computation expressions, not use 
+existing `list` comprehensions.
 
 ## Returning a Value
 
@@ -82,13 +84,18 @@ type StackBuilder() =
     member __.Yield(value) = Stack.lift value
 ```
 
-Basically nothing. Compare `Stack.lift` with `State.result`, and you'll find they are essentially the same, except for the differences in data structure. `Yield` is typically used when you _want_ multiple return values as it better matches with the syntax found in most iterator or generator implementations in other languages. You are free to use either.
+Basically nothing. Compare `Stack.lift` with `State.result`, and you'll find they are essentially the same, 
+except for the differences in data structure. `Yield` is typically used when you _want_ multiple return values 
+as it better matches with the syntax found in most iterator or generator implementations in other languages. 
+You are free to use either.
 
 Once you implement the member, the build should succeed and tests should pass when running `dotnet test`.
 
 > **Observation:** `Yield` = `Return`, _most_ of the time.
 
-We might as well cover `YieldFrom`, which is the same as `ReturnFrom` covered earlier. Again, these essentially enable syntactic sugar of a different form, so you don't need to implement both unless you want them to enable different behavior in some way.
+We might as well cover `YieldFrom`, which is the same as `ReturnFrom` covered earlier. Again, these essentially 
+enable syntactic sugar of a different form, so you don't need to implement both unless you want them to enable 
+different behavior in some way.
 
 ``` fsharp
 // in StackBuilder
@@ -124,7 +131,8 @@ Building the project fails with:
 /Users/ryan/Code/computation-expressions-workshop/solutions/Sequences.fs(43,17): error FS0708: This control construct may only be used if the computation expression builder defines a 'Combine' method
 ```
 
-Our old friend `Combine` wants to join in the fun. This shouldn't come as a surprise given what we learned about the relationship between `Return` and `Yield`. The only outstanding issue is how to combine these two?
+Our old friend `Combine` wants to join in the fun. This shouldn't come as a surprise given what we learned about the 
+relationship between `Return` and `Yield`. The only outstanding issue is how to combine these two?
 
 You have two options:
 1. Load the first stack first, though they are older
@@ -146,7 +154,8 @@ This greatly depends on how you want your computation expression to work. `push`
     member __.Combine(s1:Stack<'a>, s2:Stack<'a>) = Stack.append s1 s2
 ```
 
-Once again, module functions come in handy. The `append` function is essentially the same as the `List.append`, and that's exactly what we want to do here: replace the `Empty` at the end of the first stack, `s1`, with `s2`.
+Once again, module functions come in handy. The `append` function is essentially the same as the `List.append`,
+and that's exactly what we want to do here: replace the `Empty` at the end of the first stack, `s1`, with `s2`.
 
 Running `dotnet test` once again fails:
 
@@ -158,7 +167,8 @@ Running `dotnet test` once again fails:
     member __.Delay(f) = f()
 ```
 
-is enough to satisfy the compiler and allow our tests to run. However, if you add `printfn` statements between the `yield` statements, you'll see they are eagerly evaluated as before. You'll see the same with the following implementation, with `Run`:
+The above is enough to satisfy the compiler and allow our tests to run. However, if you add `printfn` statements between the `yield` statements, 
+you'll see they are eagerly evaluated as before. You'll see the same with the following implementation, with `Run`:
 
 ``` fsharp
     member __.Combine(s1, s2) = Stack.append s1 (s2())
@@ -181,7 +191,8 @@ In order to correctly delay execution, you'll need something similar to what we 
         }
 ```
 
-A `for` loop is a much better way of expressing iteration for a collection than ` let!`, and iteration is the execution of a collection, after all.
+A `for` loop is a much better way of expressing iteration for a collection than ` let!`, and iteration is 
+the execution of a collection, after all.
 
 The compiler helpfully informs us:
 
@@ -197,7 +208,8 @@ seq<'T> * ('T -> M<'U>) -> M<'U>
 seq<'T> * ('T -> M<'U>) -> seq<M<'U>>
 ```
 
-The first would be useful in our previous CEs as means of aggregating a sequence. However, the list is incomplete. Another, valid signature is:
+The first would be useful in our previous CEs as means of aggregating a sequence. However, the list is incomplete. Another, 
+valid signature is:
 
 ``` fsharp
 M<'T> -> ('T -> M<'U>) -> M<'U>
@@ -247,7 +259,10 @@ printed 2
 val actual : Stack<int> = Cons (1,Cons (2,Cons (3,Empty)))
 ```
 
-The `printfn` statements still succeed. Just like `'a list`, our `Stack` is eagerly evaluated to produce a result. Attempting to block this with iteration fails. We would need to go to greater lengths and create a true `LazyList` type using either `Lazy<'T>` or a `unit -> 'T` as the internal type. For the purposes of `StackBuilder`, however, we should adopt the simplest option possible, which was the original:
+The `printfn` statements still succeed. Just like `'a list`, our `Stack` is eagerly evaluated to produce a result. 
+Attempting to block this with iteration fails. We would need to go to greater lengths and create a true `LazyList` type 
+using either `Lazy<'T>` or a `unit -> 'T` as the internal type. For the purposes of `StackBuilder`, however, we should 
+adopt the simplest option possible, which was the original:
 
 ``` fsharp
     member __.Delay(f:unit -> Stack<'a>) = f()
@@ -268,6 +283,7 @@ and looked at many of the members required to create these builders. In this exe
 * `YieldFrom`
 * `For`
 
-and saw how they were similar to other members we implemented previously except for the syntax provided. We also briefly covered variations for the `For` member.
+and saw how they were similar to other members we implemented previously except for the syntax provided. We also 
+briefly covered variations for the `For` member.
 
 Only a few members remain for the core Computation Expression syntax, and we'll review those in the next exercise.

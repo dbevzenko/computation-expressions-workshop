@@ -132,7 +132,9 @@ Build and run the program with `dotnet test`. Your tests should pass.
 
 ## Composing `'a option` Values
 
-`let` bindings binds a value to a name. Computation expressions provide a `let!` binding that can bind a value according to rules specified by the computation expression. This facilitates several possibilities:
+`let` bindings binds a value to a name. Computation expressions provide a `let!` binding that can bind a value according 
+to rules specified by the computation expression. This facilitates several possibilities:
+
 * making a decision as to whether to continue or halt a computation
 * side effects, e.g. printing to the screen or making a network call
 * transform a result into another form
@@ -162,12 +164,15 @@ Build and run the program with `dotnet test`. Your program should fail to compil
 
 The compiler informs us that in order to use the `let!` keyword, we must implement the `Bind` method on our builder.
 
-The F# Language Specification indicates that the `Bind` member should have the following signature (specialized for our immediate use case):
+The F# Language Specification indicates that the `Bind` member should have the following signature (specialized 
+for our immediate use case):
+
 ``` fsharp
 member __.Bind : 'a option * ('a -> 'b option) -> 'b option
 ```
 
 As you either know or expect, this matches very closely with the signature of `Option.bind`:
+
 ``` fsharp
 module Option =
     val bind : ('a -> 'b option) -> 'a option -> 'b option
@@ -175,12 +180,12 @@ module Option =
 
 We can therefore implement `Bind` as follows:
 ``` fsharp
-    member __.Bind(m, f) = Option.bind f m // notice the parameter orientation
+    member _.Bind(m, f) = Option.bind f m // notice the parameter orientation
 ```
 
 We could also implement `Bind` like this:
 ``` fsharp
-    member __.Bind(m:'a option, f:'a -> 'b option) =
+    member _.Bind(m: 'a option, f: 'a -> 'b option) =
         match m with
         | Some x -> f x
         | None -> None
@@ -190,7 +195,10 @@ Build and run the program with `dotnet test`. Your tests should pass.
 
 ## Expansion
 
-It's worthwhile to pause here to understand what's happening. When the F# compiler encounters an instance of an object followed by `{}`, in this case `maybe`, it will attempt to expand it based on the computation expression rules. In our example above, the expansion ends up looking very similar to the `composed` value we expressed above:
+It's worthwhile to pause here to understand what's happening. When the F# compiler encounters an 
+instance of an object followed by `{}`, in this case `maybe`, it will attempt to expand it based 
+on the computation expression rules. In our example above, the expansion ends up looking very 
+similar to the `composed` value we expressed above:
 
 ``` fsharp
 let actual =
@@ -227,7 +235,8 @@ You can add a test to show that you could write this explicitly yourself:
         }
 ```
 
-Aside from reading the specification, it can be useful to add traces or `printfn` statements into your CE builder definition while developing it. Let's do that now:
+Aside from reading the specification, it can be useful to add traces or `printfn` statements 
+into your CE builder definition while developing it. Let's do that now:
 
 ``` fsharp
 type OptionBuilder() =
@@ -250,11 +259,15 @@ maybe.Return(10)
 val actual : int option = Some 10
 ```
 
-> **Observation:** the `maybe` instance is an object instance. While F# is a functional-first language, it also supports the .NET object model. Computation Expressions leverage this object model, and this can lead to some interesting possibilities we'll investigate later in the workshop.
+> **Observation:** the `maybe` instance is an object instance. While F# is a functional-first language, 
+>it also supports the .NET object model. Computation Expressions leverage this object model, and this can 
+>lead to some interesting possibilities we'll investigate later in the workshop.
 
 ## Executing without Returning
 
-F# is not a pure functional language, meaning you can perform side-effects like writing to the file system without returning a value indicating something like that happened. We looked briefly at `Async` earlier and will look at another CE that can make this explicit, but you may not want or need that.
+F# is not a pure functional language, meaning you can perform side-effects like writing to the file system 
+without returning a value indicating something like that happened. We looked briefly at `Async` earlier and 
+we will look at another CE that can make this explicit, but you may not want or need that.
 
 Let's look at a case where you want to write a file to the file system if a path was provided and the path directory exists:
 
@@ -287,7 +300,10 @@ Once again, the project fails to compile:
 /Users/ryan/Code/computation-expressions-workshop/solutions/OptionBuilder.fs(120,21): error FS0708: This control construct may only be used if the computation expression builder defines a 'Zero' method
 ```
 
-`Zero` provides us with several conveniences and is one of the first examples of why you cannot always write a canonical computation expression for a given type. `Zero` allows you to return from the computation expression without explicitly returning a value. The most typical implementation for our `OptionBuilder` would be to return `Some ()`, as this indicates "success" with no value:
+`Zero` provides us with several conveniences and is one of the first examples of why you cannot always write a 
+canonical computation expression for a given type. `Zero` allows you to return from the computation expression without 
+explicitly returning a value. The most typical implementation for our `OptionBuilder` would be to return `Some ()`, as 
+this indicates "success" with no value:
 
 ``` fsharp
     member __.Zero() =
@@ -331,19 +347,25 @@ but given a
 The type 'string' does not match the type 'unit'
 ```
 
-You can probably see the issue: `Zero` currently returns `Some ()`, but our `return` expression returns a `string`. A better solution for this case is to have `Zero` return `None`:
+You can probably see the issue: `Zero` currently returns `Some ()`, but our `return` expression returns a `string`. 
+A better solution for this case is to have `Zero` return `None`:
 
 ``` fsharp
     member __.Zero() = None
 ```
 
-Running `dotnet test` now compiles and runs with one test failure b/c our previous test expected to return `Some ()`. Change that to `None`, and your tests will pass.
+Running `dotnet test` now compiles and runs with one test failure b/c our previous test expected to return `Some ()`. 
+Change that to `None`, and your tests will pass.
 
 > **Observation:** computation expressions are not always one-size-fits-all. Our tests pass, but you can no longer use the result from the previous test in a continuing chain of computations, as it will return `None`, which will currently cause our `maybe` computations to propogate the `None`. You may find you need multiple `OptionBuilder` CEs for different use cases.
 
 ## Returning a Computation
 
-Before moving on to our next exercise, let's consider how you might escape a `maybe` computation early. Let's say that based on a condition, you want to immediately get a `None` and avoid any further computation. How might you do this? In order to return an `'a option` from our computation, we need to use `return!`. This is similar to `return` in the same way `let` and `let!` are similar. `return!` handles `'a option` just like `let!` handles an `'a option`, where as their `!`-less counterparts deal with `'a` values.
+Before moving on to our next exercise, let's consider how you might escape a `maybe` computation early. 
+Let's say that based on a condition, you want to immediately get a `None` and avoid any further computation. 
+How might you do this? In order to return an `'a option` from our computation, we need to use `return!`. 
+This is similar to `return` in the same way `let` and `let!` are similar. `return!` handles `'a option` just 
+like `let!` handles an `'a option`, where as their `!`-less counterparts deal with `'a` values.
 
 ``` fsharp
         test "OptionBuilder allows for early escape with return!" {
@@ -396,4 +418,5 @@ We implemented the following builder methods for `OptionBuilder`:
 
 We also observed that a given method, e.g. `Zero`, does not necessarily have a canonical implementation.
 
-In the next exercise, we'll look at how we might be able to overcome our choice of `None` as a result for `Zero` to continue, rather than cancel, execution of a computation involving `'a option`.
+In the next exercise, we'll look at how we might be able to overcome our choice of `None` as a result for `Zero` 
+to continue, rather than cancel, execution of a computation involving `'a option`.

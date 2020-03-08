@@ -1,3 +1,4 @@
+﻿module LearningTests
 open Expecto
 
 [<EntryPoint>]

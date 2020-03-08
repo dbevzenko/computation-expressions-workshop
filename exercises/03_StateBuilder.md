@@ -1,10 +1,13 @@
 # `StateBuilder`
 
-This exercise works through the `StateBuilder`, in which we want to manage some state of a computation. The `StateBuilder` is a useful example as it is the generalized version of several of the popular computation expressions you'll find in F# libraries, e.g. [Freya](https://freya.io/) and [Saturn](https://saturnframework.org/).
+This exercise works through the `StateBuilder`, in which we want to manage some state of a computation. 
+The `StateBuilder` is a useful example as it is the generalized version of several of the popular computation 
+expressions you'll find in F# libraries, e.g. [Freya](https://freya.io/) and [Saturn](https://saturnframework.org/).
 
 1. Create a new file, `StateBuilder.fs`.
 2. Add the file to your `.fsproj` with `<Compile Include="StateBuilder.fs" />` just below `ChoiceBuilder.fs`.
 3. Add the following lines to the `StateBuilder.fs` file:
+
 ``` fsharp
 module States
 
@@ -17,7 +20,8 @@ let state = StateBuilder()
 
 ## `State`
 
-Let's first define the `State` type that will define our interactions. In order to understand how this type should be defined, let's look at an example of how we might use some state without a computation expression:
+Let's first define the `State` type that will define our interactions. In order to understand how this type should be 
+defined, let's look at an example of how we might use some state without a computation expression:
 
 ``` fsharp
 open System.Text
@@ -37,11 +41,18 @@ let tests =
     ]
 ```
 
-We've defined four functions, each taking a `StringBuilder` and returning a `StringBuilder`, or in the case of `run`, a `string`. This allows us to nicely chain these functions together and then produce a result at the end. Your primary **observation** here should be that there's a pattern of passing a specific instance and getting it back in the result.
+We've defined four functions, each taking a `StringBuilder` and returning a `StringBuilder`, or in 
+the case of `run`, a `string`. This allows us to nicely chain these functions together and then produce a 
+result at the end. Your primary **observation** here should be that there's a pattern of passing a 
+specific instance and getting it back in the result.
 
-This pattern is often called a [_Fluent Interface_](https://www.martinfowler.com/bliki/FluentInterface.html) in C# designs. In F#, the use of a pipeline typically indicates getting one thing and returning a new, modified instance of the same type, whereas the above sample nafariously hides state mutation with the same pattern. (See [Fluent Interfaces are Evil](https://www.martinfowler.com/bliki/FluentInterface.html) for a relevant discussion.)
+This pattern is often called a [_Fluent Interface_](https://www.martinfowler.com/bliki/FluentInterface.html) in C# designs. 
+In F#, the use of a pipeline typically indicates getting one thing and returning a new, modified instance of the same type, 
+whereas the above sample nafariously hides state mutation with the same pattern. (See [Fluent Interfaces are Evil](https://www.martinfowler.com/bliki/FluentInterface.html) for a relevant discussion.)
 
-However, this is overly simplified, as we may not _always_ want to `Append` to the `StringBuilder`, and we may want to compute a value, which may require retrieving the current value from the `StringBuilder`. With this in mind, we can define our type as:
+However, this is overly simplified, as we may not _always_ want to `Append` to the `StringBuilder`, and we may want to 
+compute a value, which may require retrieving the current value from the `StringBuilder`. With this in mind, we can 
+define our type as:
 
 ``` fsharp
 /// State is a function type that takes a state and
@@ -56,13 +67,17 @@ or
 type State<'a, 's> = State of ('s -> 'a * 's)
 ```
 
-depending on whether you prefer the single-case union style. The latter makes the type much more explicit, but it may also prevent you from using existing functions without first wrapping and unwrapping them. For this exercise, we'll use the first version as a means of demonstrating that approach.
+depending on whether you prefer the single-case union style. The latter makes the type much more explicit, but it may also 
+prevent you from using existing functions without first wrapping and unwrapping them. For this exercise, we'll use the first 
+version as a means of demonstrating that approach.
 
 > **NOTE:** you may not always need to produce a value to follow this pattern. A great example is the `HttpHandler` from Suave and Giraffe: `type HttpHandler = HttpContext -> Async<HttpContext option>`. This type mixes several concepts together but is ultimately similar to what we are building here, only without a value produced aside from the state.
 
 ## `State` module
 
-Many of our computation expression member implementations will be very similar. However, we were able to leverage existing module functions for the `OptionBuilder`, and having created a new type, we have no functions with which to work. Let's define those now.
+Many of our computation expression member implementations will be very similar. However, we were able to leverage existing 
+module functions for the `OptionBuilder`, and having created a new type, we have no functions with which to work. Let's define 
+those now.
 
 > **NOTE:** creating a module of functions allows you to work without a computation expression, as well. This can be quite useful for debugging or for writing simple computations where the CE may not be quite as useful. You may also find it easier to think of each function separately rather than trying to define the behavior within a class member.
 
@@ -105,7 +120,8 @@ The expanded signature shows us that we need a state value to retrieve the `'a` 
             m' s'
 ```
 
-In this case, we used the explicit lambda as it allows us to specify the types in the `bind` definition to help us guide our implementation.
+In this case, we used the explicit lambda as it allows us to specify the types in the `bind` definition to help us guide 
+our implementation.
 
 We now have enough to begin implementing our `StateBuilder`:
 
@@ -120,7 +136,9 @@ type StateBuilder() =
 
 ## Running a `State` Computation
 
-While the `maybe` and `choose` computations returned an `option` value, this one returns a computation. You'll generally find it helpful to create helper functions to run the computation. In the case of `State`, since we have a tuple in the result, it is helpful to create two:
+While the `maybe` and `choose` computations returned an `option` value, this one returns a computation. You'll generally 
+find it helpful to create helper functions to run the computation. In the case of `State`, since we have a tuple in the result, 
+it is helpful to create two:
 
 ``` fsharp
 module State =
@@ -143,7 +161,8 @@ We'll also need a pair of functions to get and set the state:
     let setState (s:'s) = fun _ -> (), s
 ```
 
-Next add some tests to verify the basics work. The following test pairs are almost identical, but they return a result in two different ways:
+Next add some tests to verify the basics work. The following test pairs are almost identical, but they return a 
+result in two different ways:
 
 1. as a value without changing state
 2. as a state update returning `()`
@@ -227,14 +246,16 @@ Hello
 val c : State<unit,string>
 ```
 
-Why is `Hello` printed above just by creating the `State` value? Shouldn't that only happen when we run the computation? We need to implement `Delay` to delay execution until we are ready. Here's an implementation like we had before:
+Why is `Hello` printed above just by creating the `State` value? Shouldn't that only happen when we run the computation? 
+We need to implement `Delay` to delay execution until we are ready. Here's an implementation like we had before:
 
 ``` fsharp
     member __.Delay(f) = f
     member __.Run(f) = f()
 ```
 
-This satisfies the compiler (if you include `Run`) but does not resolve the issue, as `Hello` is still printed. What about the previous attempt of calling the `f` that was passed immediately?
+This satisfies the compiler (if you include `Run`) but does not resolve the issue, as `Hello` is still printed. What about 
+the previous attempt of calling the `f` that was passed immediately?
 
 ``` fsharp
     member __.Delay(f) = f()
@@ -277,7 +298,8 @@ Add the following test and observe the compiler error:
 /Users/ryan/Code/computation-expressions-workshop/solutions/StateBuilder.fs(193,17): error FS0708: This control construct may only be used if the computation expression builder defines a 'Combine' method
 ```
 
-Returning multiple values requires `Combine`, so let's implement it ... but how? Here, we once again land in difficult territory. This is a reasonable implementation:
+Returning multiple values requires `Combine`, so let's implement it ... but how? Here, we once again land in difficult territory. 
+This is a reasonable implementation:
 
 ``` fsharp
     member __.Combine(m1:State<unit, 's>, m2:State<'a, 's>) =
@@ -297,7 +319,9 @@ Here's another:
 
 For our test above, the second option works, whereas the first option fails, as it requires that the first `return` returns a `()`.
 
-> **Observation:** you can implement **both** member definitions side-by-side within the same builder without a problem. Since CE builders are just classes, you can implement overload methods for different types of value and state as appropriate, which can give you great freedom to cover a multitude of types.
+> **Observation:** you can implement **both** member definitions side-by-side within the same builder without a problem. 
+>Since CE builders are just classes, you can implement overloaded methods for different types of value and state as appropriate, 
+>which can give you great freedom to cover a multitude of types.
 
 ## Review
 
@@ -309,14 +333,20 @@ We've implemented another builder with the following members:
 * `Delay`
 * `Combine`
 
-We did not implement `Run` because it doesn't help us in this case. However, we _did_ implement a module of functions to define the functionality we used in the `StateBuilder` and that help us run the computation produced by the `state` expression, including:
+We did not implement `Run` because it doesn't help us in this case. However, we _did_ implement a module of functions 
+to define the functionality we used in the `StateBuilder` and that help us run the computation produced by the `state` 
+expression, including:
 * `eval`
 * `exec`
 * `getState`
 * `setState`
 
-We observed an even clearer example of how builder implementations may require member overloads in order to correctly cover different types of expressions.
+We observed an even clearer example of how builder implementations may require member overloads in order to correctly 
+cover different types of expressions.
 
-Lastly, we have an example of how to resolve a common F# design question, "Where do I put this common state parameter?" If you have a set of functions that work together, and you are trying to determine whether to put the state instance as the first parameter -- so you can partially apply it -- or as the last -- so you can pipe it -- to the several, related functions, you may just want a CE that allows you to define the computation and then feed the state at the end.
+Lastly, we have an example of how to resolve a common F# design question, "Where do I put this common state parameter?" 
+If you have a set of functions that work together, and you are trying to determine whether to put the state instance 
+as the first parameter -- so you can partially apply it -- or as the last -- so you can pipe it -- to the several, 
+related functions, you may just want a CE that allows you to define the computation and then feed the state at the end.
 
 In the next exercise, we will take returning multiple values to the next level.

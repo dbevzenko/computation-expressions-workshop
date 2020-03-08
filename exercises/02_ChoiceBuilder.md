@@ -1,6 +1,7 @@
 # `ChoiceBuilder`
 
-In this next exercise, we'll look at how we can chain `'a option` computations together by returning multiple values. This is similar to allow the computation to make a choice, e.g.
+In this next exercise, we'll look at how we can chain `'a option` computations together by returning multiple values. 
+This is similar to allow the computation to make a choice, e.g.
 
 ``` fsharp
 let actual : string option =
@@ -10,7 +11,9 @@ let actual : string option =
     }
 ```
 
-Our implemetation will allow the computation to _choose_ a path based on the values returned. Following our example from the previous exercise, successfully writing the file and returning `None` could then be a way of signaling to continue, whereas a value of `Some "some error message"` would indicate the computation should halt.
+Our implementation will allow the computation to _choose_ a path based on the values returned. Following our 
+example from the previous exercise, successfully writing the file and returning `None` could then be a way of 
+signaling to continue, whereas a value of `Some "some error message"` would indicate the computation should halt.
 
 1. Create a new file, `ChoiceBuilder.fs`.
 2. Add the file to your `.fsproj` with `<Compile Include="ChoiceBuilder.fs" />` just below `OptionBuilder.fs`.
@@ -25,7 +28,9 @@ type ChoiceBuilder() = class end
 
 ## Interlude
 
-Before we get to far, observe that due to CE's use of classes, we can re-use functionality by means of inheritance. I don't advise doing this as a regular practice, but it can be useful in some cases. We'll use it here only to illustrate that you _can_.
+Before we get to far, observe that due to CE's use of classes, we can re-use functionality by means of inheritance. 
+I don't advise doing this as a regular practice, but it can be useful in some cases. We'll use it here only to illustrate
+that you _can_.
 
 ``` fsharp
 open Options
@@ -127,7 +132,8 @@ let tests =
     ]
 ```
 
-Running `dotnet test` with this implementation should succeed and show that we are now ready to extend our builder. This is _one_ way to extend a builder if you don't want to accidentally break code using `maybe` elsewhere.
+Running `dotnet test` with this implementation should succeed and show that we are now ready to extend our builder. 
+This is _one_ way to extend a builder if you don't want to accidentally break code using `maybe` elsewhere.
 
 ## Combining Computations
 
@@ -155,7 +161,9 @@ The standard signature for `Choose` from the specification would appear to indic
 member Combine : unit option * (unit -> 'a option) -> 'a option
 ```
 
-This would work just fine if we wanted to continue in the case of a `Some ()`, as we initially started with in our `OptionBuilder`. However, we want to support a choice, where a `None` leads to the second path, not a `Some ()`. With that in mind, our signature needs to be slightly different:
+This would work just fine if we wanted to continue in the case of a `Some ()`, as we initially started with 
+in our `OptionBuilder`. However, we want to support a choice, where a `None` leads to the second path, not a `Some ()`. 
+With that in mind, our signature needs to be slightly different:
 
 ``` fsharp
 member Combine : 'a option * (unit -> 'a option) -> 'a option
@@ -179,7 +187,8 @@ Try to compile, and you'll find that the compiler is still not happy:
 
 ## Delaying Execution
 
-When running a computation expression, results are eagerly evaluated. `Delay` allows the computation to pause. `Delay` is generally defined as:
+When running a computation expression, results are eagerly evaluated. `Delay` allows the computation to pause. 
+`Delay` is generally defined as:
 
 ``` fsharp
 member Delay : (unit -> 'a option) -> 'a option
@@ -193,7 +202,8 @@ or for our computation,
         f()
 ```
 
-`Delay` essentially wraps your expression in a function that takes a `unit` parameter in order to force something to request execution. There is no requirement on the return type, and we'll see why this is useful shortly.
+`Delay` essentially wraps your expression in a function that takes a `unit` parameter in order to force 
+something to request execution. There is no requirement on the return type, and we'll see why this is useful shortly.
 
 The compiler will now inform you that the signature for `Combine` is incorrect:
 
@@ -205,14 +215,15 @@ but here has type
 ```
 
 ``` fsharp
-    member __.Combine(m1:'a option, m2:'a option) =
+    member __.Combine(m1: 'a option, m2: 'a option) =
         printfn "choose.Combine(%A, %A)" m1 m2
         match m1 with
         | Some _ -> m1
         | None -> m2
 ```
 
-`Combine` now takes two `'a option` types. Because of our implementation, the type arguments must match. This isn't required for the signature of `Combine`, as should be clear from our initial attempt.
+`Combine` now takes two `'a option` types. Because of our implementation, the type arguments must match. 
+This isn't required for the signature of `Combine`, as should be clear from our initial attempt.
 
 The compiler is finally happy. Run `dotnet test` to see your test pass, as well as the print out of what methods were called:
 
@@ -244,9 +255,12 @@ The output betrays a few issues. Here's the expanded form:
         }
 ```
 
-Notice that in order to return the result, the computation _will_ evaluate both paths because `Delay` evaluates immediately, even though the second path need not be evaluated in this case. Aside from the order of the `printfn` output from the method calls, `"returning first value?"` is also printed.
+Notice that in order to return the result, the computation _will_ evaluate both paths because `Delay` evaluates immediately, 
+even though the second path need not be evaluated in this case. Aside from the order of the `printfn` output from the method
+calls, `"returning first value?"` is also printed.
 
-It's possible to have the computation expression delay execution until you are ready by changing the implementation of the `Delay` member:
+It's possible to have the computation expression delay execution until you are ready by changing the implementation of 
+the `Delay` member:
 
 ``` fsharp
     member __.Delay(f:unit -> 'a option) = f
@@ -284,7 +298,10 @@ Our `actual` value is now a function that must be called. We can do several thin
 * Wrap this as a `Lazy<_>` value to avoid repeat executions
 * Implement the `Run` member for computation expressions
 
-Because the implementation is valid, the compiler won't tell you to implement `Run`. However, you'll likely want this to avoid having to explicitly evaluate the result at the end of each computation. From the specification, `Run`, if implemented, is wrapped around the computation expression and can be used to do almost anything. For our purposes, we'll have it just execute the delayed expression:
+Because the implementation is valid, the compiler won't tell you to implement `Run`. However, you'll likely want this 
+to avoid having to explicitly evaluate the result at the end of each computation. From the specification, `Run`, 
+if implemented, is wrapped around the computation expression and can be used to do almost anything. For our purposes, we'll 
+have it just execute the delayed expression:
 
 ``` fsharp
     member __.Run(f:unit -> 'a option) =
@@ -292,7 +309,8 @@ Because the implementation is valid, the compiler won't tell you to implement `R
         f()
 ```
 
-The previous test we added to compare the expanded form will now break, so just comment it out or remove it and run `dotnet test`. Your tests should pass, and you should no longer see `"returning first value?"` printed in the output.
+The previous test we added to compare the expanded form will now break, so just comment it out or remove it and run `dotnet test`. 
+Your tests should pass, and you should no longer see `"returning first value?"` printed in the output.
 
 ```
 choose.Delay(<fun:actual@427-14>)
@@ -323,7 +341,10 @@ Here's the expanded form now that we have delayed the computation:
         }
 ```
 
-Notice that `Run` wraps the entire expression now. Also, the second argument to `Combine` is now the delayed expression rather than the evaluated result of the delayed expression because `Delay` _does not_ immediately invoke its provided function. `Combine` is now responsible for invoking the provided function, just as `Run` is responsible for invoking the top-level delayed function.
+Notice that `Run` wraps the entire expression now. Also, the second argument to `Combine` is now the delayed expression rather 
+than the evaluated result of the delayed expression because `Delay` _does not_ immediately invoke its provided function. 
+`Combine` is now responsible for invoking the provided function, just as `Run` is responsible for invoking the top-level delayed 
+function.
 
 For good measure, let's add tests to verify:
 
@@ -358,7 +379,8 @@ Running `dotnet test` should compile and pass all tests.
 
 ## Chaining Computations
 
-Can we now go back to our file writing computation and chain additional work to the end of a successful, indicated by a `None`, file write?
+Can we now go back to our file writing computation and chain additional work to the end of a successful, 
+indicated by a `None`, file write?
 
 ``` fsharp
         test "ChoiceBuilder can chain a computation onto another returning None, where None indicates success" {
@@ -398,8 +420,12 @@ In this exercise, we implemented the following members, many in several, differe
 * `Delay`
 * `Run`
 
-You should be getting the idea that computation expressions _do not_ adhere to strict or rigid type signatures but can be implemented to solve different problems depending on your use case.
+You should be getting the idea that computation expressions _do not_ adhere to strict or rigid type 
+signatures but can be implemented to solve different problems depending on your use case.
 
-We also observed that, since computation expression builders are just .NET classes, you can also use inheritance and the full range of OO programming.
+We also observed that, since computation expression builders are just .NET classes, you can also use 
+inheritance and the full range of OO programming.
 
-So far, we've only looked at "wrapper" or "container" types, types that wrap a value in some way. Another example would be the `Result` type. In the next section, we'll look at writing computation expressions around function types.
+So far, we've only looked at "wrapper" or "container" types, types that wrap a value in some way. 
+Another example would be the `Result` type. In the next section, we'll look at writing computation 
+expressions around function types.
