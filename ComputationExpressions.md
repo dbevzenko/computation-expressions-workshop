@@ -171,8 +171,8 @@ to these translations where expr is an F# expression and `cexpr` is a computatio
 
 | `cexpr`      | Transformed into   | 
 | ------------- | ------------- | 
-| `{ let binding in cexpr }`     | `let binding in {| cexpr |}` | 
-| `{ let! pattern = expr in cexpr }`     | `builder.Bind(expr, (fun pattern -> {| cexpr |}))` | 
+| `{ let binding in cexpr }`     | <code>let binding in {| cexpr |}</code> | 
+| `{ let! pattern = expr in cexpr }`     | `builder.Bind(expr, (fun pattern -> {\| cexpr \|}))` | 
 | `{ do! expr in cexpr }`     | `builder.Bind(expr, (fun () -> {| cexpr |}))` | 
 | `{ yield expr }`     | `builder.Yield(expr)` | 
 | `{ yield! expr }`     | `builder.YieldFrom(expr)` | 
