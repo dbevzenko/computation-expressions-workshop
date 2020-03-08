@@ -4,6 +4,8 @@
 let inline getName value = (^t : (member name : _) value)
 // val inline getName : value: ^t -> 'a when  ^t : (member get_name :  ^t -> 'a)
 
+let inline (.+) (v : ^a) (l : ^a list) = v :: l
+
 open Expecto
 
 type Stack<'a> =
@@ -65,8 +67,8 @@ module Stack =
         loop m id
 
     /// Converts the Stack<'a> to an 'a list.
-    let toList s = foldr (fun v l -> v :: l) [] s
-    //let toList s = foldr (::) [] s
+    //let toList s = foldr (fun v l -> v :: l) [] s
+    let toList s = foldr (.+) [] s
 
     // sum stack elements
     let inline sum s = foldr (+) LanguagePrimitives.GenericZero s
